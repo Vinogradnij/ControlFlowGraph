@@ -14,6 +14,11 @@ class MyVisitor(NodeVisitor):
         print()
         self.generic_visit(node)
 
+    def visit_If(self, node: If) -> Any:
+        test = parse_expression(node.test)
+        print(test)
+        print()
+
 
 def parse_expression(node):
     if isinstance(node, Name):
@@ -31,6 +36,8 @@ def parse_expression(node):
         return parse_unary_op(node)
     elif isinstance(node, BinOp):
         return parse_binary_op(node)
+    elif isinstance(node, BoolOp):
+        return parse_bool_op(node)
 
 
 def parse_name(node: Name):
@@ -47,7 +54,6 @@ def parse_attribute(node: Attribute):
 
 @singledispatch
 def parse_collection(collection):
-    print('normal col')
     content = []
     for argument in collection:
         content.append(parse_expression(argument))
@@ -62,13 +68,10 @@ def _(collection):
     for argument in collection.elts:
         content.append(parse_expression(argument))
     if isinstance(collection, List):
-        print('List ast col')
         return f'[{",".join(content)}]'
     elif isinstance(collection, Tuple):
-        print('Tuple ast col')
         return f'({",".join(content)})'
     else:
-        print('Set ast col')
         return f'{{{",".join(content)}}}'
 
 
@@ -77,7 +80,6 @@ def _(collection):
     content = []
     for key, value in collection.keys, collection.values:
         content.append(f'"{parse_expression(key)}":{parse_expression(value)}')
-    print('list col')
     return f'{{{",".join(content)}}}'
 
 
@@ -124,3 +126,14 @@ def parse_binary_op(node: BinOp):
     else:
         op = '^'
     return f'{left} {op} {right}'
+
+
+def parse_bool_op(node: BoolOp):
+    if isinstance(node.op, And):
+        op = ' and '
+    else:
+        op = ' or '
+    content = []
+    for operand in node.values:
+        content.append(parse_expression(operand))
+    return op.join(content)
