@@ -28,6 +28,10 @@ class MyVisitor(NodeVisitor):
         print(parse_expression(node))
         self.generic_visit(node)
 
+    def visit_Call(self, node: Call) -> Any:
+        print(parse_expression(node))
+        self.generic_visit(node)
+
 
 def parse_expression(node):
     if isinstance(node, Name):
@@ -57,6 +61,10 @@ def parse_expression(node):
         return parse_expr(node)
     elif isinstance(node, Delete):
         return parse_delete(node)
+    elif isinstance(node, Starred):
+        return parse_starred(node)
+    elif isinstance(node, keyword):
+        return parse_keyword(node)
 
 
 def parse_name(node: Name):
@@ -76,15 +84,10 @@ def parse_collection(collection):
     content = []
     for argument in collection:
         content.append(parse_expression(argument))
-    return ", ".join(content)
-
-
-@parse_collection.register(tuple)
-def _(collection):
-    content = []
-    for argument in collection:
-        content.append(parse_expression(argument))
-    return "".join(content)
+    if isinstance(collection, tuple):
+        return "".join(content)
+    else:
+        return ", ".join(content)
 
 
 @parse_collection.register(List)
@@ -111,7 +114,8 @@ def _(collection):
 
 
 def parse_call(node: Call):
-    return f'{parse_expression(node.func)}({parse_expression(node.args)})'
+    args = parse_expression(node.args + node.keywords)
+    return f'{parse_expression(node.func)}({args})'
 
 
 def parse_unary_op(node: UnaryOp):
@@ -202,8 +206,8 @@ def parse_formatted_value(node: FormattedValue):
 
 
 def parse_joined_str(node: JoinedStr):
-    collection_without_separator = (*node.values,)
-    return parse_expression(collection_without_separator)
+    collection_without_separator = tuple(node.values)
+    return f'f"{parse_expression(collection_without_separator)}"'
 
 
 def parse_expr(node: Expr):
@@ -212,3 +216,14 @@ def parse_expr(node: Expr):
 
 def parse_delete(node: Delete):
     return f'del {parse_expression(node.targets)}'
+
+
+def parse_starred(node: Starred):
+    return f'*{parse_expression(node.value)}'
+
+
+def parse_keyword(node: keyword):
+    if hasattr(node, 'arg') and node.arg is not None:
+        return f'{node.arg}={parse_expression(node.value)}'
+    else:
+        return f'**{parse_expression(node.value)}'
