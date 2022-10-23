@@ -24,6 +24,10 @@ class MyVisitor(NodeVisitor):
         print(parse_expression(node))
         self.generic_visit(node)
 
+    def visit_Delete(self, node: Delete) -> Any:
+        print(parse_expression(node))
+        self.generic_visit(node)
+
 
 def parse_expression(node):
     if isinstance(node, Name):
@@ -33,7 +37,7 @@ def parse_expression(node):
     elif isinstance(node, Attribute):
         return parse_attribute(node)
     elif isinstance(node, List) or isinstance(node, Tuple) or isinstance(node, Set) or isinstance(node, Dict) \
-            or isinstance(node, list):
+            or isinstance(node, list) or isinstance(node, tuple):
         return parse_collection(node)
     elif isinstance(node, Call):
         return parse_call(node)
@@ -51,6 +55,8 @@ def parse_expression(node):
         return parse_joined_str(node)
     elif isinstance(node, Expr):
         return parse_expr(node)
+    elif isinstance(node, Delete):
+        return parse_delete(node)
 
 
 def parse_name(node: Name):
@@ -67,6 +73,14 @@ def parse_attribute(node: Attribute):
 
 @singledispatch
 def parse_collection(collection):
+    content = []
+    for argument in collection:
+        content.append(parse_expression(argument))
+    return ", ".join(content)
+
+
+@parse_collection.register(tuple)
+def _(collection):
     content = []
     for argument in collection:
         content.append(parse_expression(argument))
@@ -188,8 +202,13 @@ def parse_formatted_value(node: FormattedValue):
 
 
 def parse_joined_str(node: JoinedStr):
-    return parse_expression(node.values)
+    collection_without_separator = (*node.values,)
+    return parse_expression(collection_without_separator)
 
 
 def parse_expr(node: Expr):
     return parse_expression(node.value)
+
+
+def parse_delete(node: Delete):
+    return f'del {parse_expression(node.targets)}'

@@ -12,6 +12,7 @@ d = math.pi
 e = math.sqrt(9)
 f = [0, 1, 2]
 g = f[1:2]
+del f, e
 
 if a and b or not c:
     print('Nice')
