@@ -15,6 +15,7 @@ f = [0, 1, 2]
 g = f[1:2]
 del f, e
 abc = func(a, b=c, *d, **e)
+a if b else c
 if a and b or not c:
     print('Nice')
 elif b < a < 10 > 100:

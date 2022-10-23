@@ -65,6 +65,8 @@ def parse_expression(node):
         return parse_starred(node)
     elif isinstance(node, keyword):
         return parse_keyword(node)
+    elif isinstance(node, IfExp):
+        return parse_if_exp(node)
 
 
 def parse_name(node: Name):
@@ -227,3 +229,7 @@ def parse_keyword(node: keyword):
         return f'{node.arg}={parse_expression(node.value)}'
     else:
         return f'**{parse_expression(node.value)}'
+
+
+def parse_if_exp(node: IfExp):
+    return f'{parse_expression(node.body)} if {parse_expression(node.test)} else {parse_expression(node.orelse)}'
