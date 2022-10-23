@@ -20,6 +20,10 @@ class MyVisitor(NodeVisitor):
         print()
         self.generic_visit(node)
 
+    def visit_Expr(self, node: Expr) -> Any:
+        print(parse_expression(node))
+        self.generic_visit(node)
+
 
 def parse_expression(node):
     if isinstance(node, Name):
@@ -28,7 +32,7 @@ def parse_expression(node):
         return parse_constant(node)
     elif isinstance(node, Attribute):
         return parse_attribute(node)
-    elif isinstance(node, List) or isinstance(node, Tuple) or isinstance(node, Set) or isinstance(node, Dict)\
+    elif isinstance(node, List) or isinstance(node, Tuple) or isinstance(node, Set) or isinstance(node, Dict) \
             or isinstance(node, list):
         return parse_collection(node)
     elif isinstance(node, Call):
@@ -41,6 +45,12 @@ def parse_expression(node):
         return parse_bool_op(node)
     elif isinstance(node, Compare):
         return parse_compare(node)
+    elif isinstance(node, FormattedValue):
+        return parse_formatted_value(node)
+    elif isinstance(node, JoinedStr):
+        return parse_joined_str(node)
+    elif isinstance(node, Expr):
+        return parse_expr(node)
 
 
 def parse_name(node: Name):
@@ -52,7 +62,7 @@ def parse_constant(node: Constant):
 
 
 def parse_attribute(node: Attribute):
-    return f'{parse_name(node.value)}.{node.attr}'
+    return f'{parse_expression(node.value)}.{node.attr}'
 
 
 @singledispatch
@@ -60,7 +70,7 @@ def parse_collection(collection):
     content = []
     for argument in collection:
         content.append(parse_expression(argument))
-    return ",".join(content)
+    return "".join(content)
 
 
 @parse_collection.register(List)
@@ -87,7 +97,7 @@ def _(collection):
 
 
 def parse_call(node: Call):
-    return f'{parse_attribute(node.func)}({parse_collection(node.args)})'
+    return f'{parse_expression(node.func)}({parse_expression(node.args)})'
 
 
 def parse_unary_op(node: UnaryOp):
@@ -100,7 +110,7 @@ def parse_unary_op(node: UnaryOp):
         op = 'not '
     else:
         op = '~'
-    return op+operand
+    return op + operand
 
 
 def parse_binary_op(node: BinOp):
@@ -171,3 +181,15 @@ def parse_compare(node: Compare):
         content.append(op)
         content.append(parse_expression(comparator))
     return ' '.join(content)
+
+
+def parse_formatted_value(node: FormattedValue):
+    return f'{{{parse_expression(node.value)}}}'
+
+
+def parse_joined_str(node: JoinedStr):
+    return parse_expression(node.values)
+
+
+def parse_expr(node: Expr):
+    return parse_expression(node.value)
