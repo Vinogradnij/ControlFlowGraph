@@ -27,6 +27,10 @@ def parse_expression(node):
         return parse_collection(node)
     elif isinstance(node, Call):
         return parse_call(node)
+    elif isinstance(node, UnaryOp):
+        return parse_unary_op(node)
+    elif isinstance(node, BinOp):
+        return parse_binary_op(node)
 
 
 def parse_name(node: Name):
@@ -79,3 +83,44 @@ def _(collection):
 
 def parse_call(node: Call):
     return f'{parse_attribute(node.func)}({parse_collection(node.args)})'
+
+
+def parse_unary_op(node: UnaryOp):
+    operand = parse_expression(node.operand)
+    if isinstance(node.op, UAdd):
+        op = '+'
+    elif isinstance(node.op, USub):
+        op = '-'
+    elif isinstance(node.op, Not):
+        op = 'not '
+    else:
+        op = '~'
+    return op+operand
+
+
+def parse_binary_op(node: BinOp):
+    left = parse_expression(node.left)
+    right = parse_expression(node.right)
+    if isinstance(node.op, Add):
+        op = '+'
+    elif isinstance(node.op, Sub):
+        op = '-'
+    elif isinstance(node.op, Mult):
+        op = '*'
+    elif isinstance(node.op, FloorDiv):
+        op = '//'
+    elif isinstance(node.op, Mod):
+        op = '%'
+    elif isinstance(node.op, Pow):
+        op = '**'
+    elif isinstance(node.op, LShift):
+        op = '<<'
+    elif isinstance(node.op, RShift):
+        op = '>>'
+    elif isinstance(node.op, BitOr):
+        op = '|'
+    elif isinstance(node.op, BitAnd):
+        op = '&'
+    else:
+        op = '^'
+    return f'{left} {op} {right}'
