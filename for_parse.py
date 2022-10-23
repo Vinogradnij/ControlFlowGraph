@@ -11,7 +11,8 @@ e = math.sqrt(9)
 f = [0,1,2]
 
 if a and b or not c:
-# if a > b > 0 and a < 10:
+    print('Nice')
+elif b < a < 10 > 100:
     a = a + 10
 else:
     a = False

@@ -18,6 +18,7 @@ class MyVisitor(NodeVisitor):
         test = parse_expression(node.test)
         print(test)
         print()
+        self.generic_visit(node)
 
 
 def parse_expression(node):
@@ -38,6 +39,8 @@ def parse_expression(node):
         return parse_binary_op(node)
     elif isinstance(node, BoolOp):
         return parse_bool_op(node)
+    elif isinstance(node, Compare):
+        return parse_compare(node)
 
 
 def parse_name(node: Name):
@@ -137,3 +140,34 @@ def parse_bool_op(node: BoolOp):
     for operand in node.values:
         content.append(parse_expression(operand))
     return op.join(content)
+
+
+def parse_compare(node: Compare):
+    content = []
+    left = parse_expression(node.left)
+    content.append(left)
+
+    for operand, comparator in zip(node.ops, node.comparators):
+        if isinstance(operand, Eq):
+            op = '=='
+        elif isinstance(operand, NotEq):
+            op = '!='
+        elif isinstance(operand, Lt):
+            op = '<'
+        elif isinstance(operand, LtE):
+            op = '<='
+        elif isinstance(operand, Gt):
+            op = '>'
+        elif isinstance(operand, GtE):
+            op = '>='
+        elif isinstance(operand, Is):
+            op = 'is'
+        elif isinstance(operand, IsNot):
+            op = 'is not'
+        elif isinstance(operand, In):
+            op = 'in'
+        else:
+            op = 'not in'
+        content.append(op)
+        content.append(parse_expression(comparator))
+    return ' '.join(content)
