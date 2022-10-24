@@ -1,5 +1,5 @@
 from ast import *
-from astpretty import pprint
+# from astpretty import pprint
 from typing import Any
 from functools import singledispatch
 
@@ -7,17 +7,11 @@ from functools import singledispatch
 class MyVisitor(NodeVisitor):
 
     def visit_Assign(self, node: Assign) -> Any:
-        targets = parse_expression(node.targets)
-        value = parse_expression(node.value)
-        result = f'{targets} = {value}'
-        print(result)
-        print()
+        print(parse_expression(node))
         self.generic_visit(node)
 
     def visit_If(self, node: If) -> Any:
-        test = parse_expression(node.test)
-        print(test)
-        print()
+        print(parse_expression(node))
         self.generic_visit(node)
 
     def visit_Expr(self, node: Expr) -> Any:
@@ -69,6 +63,15 @@ def parse_expression(node):
         return parse_if_exp(node)
     elif isinstance(node, NamedExpr):
         return parse_name_expr(node)
+    elif isinstance(node, Subscript):
+        return parse_subscript(node)
+    elif isinstance(node, Slice):
+        return parse_slice(node)
+    elif isinstance(node, Assign):
+        return parse_assign(node)
+    elif isinstance(node, If):
+        return parse_if(node)
+
 
 def parse_name(node: Name):
     return node.id
@@ -80,6 +83,13 @@ def parse_constant(node: Constant):
 
 def parse_attribute(node: Attribute):
     return f'{parse_expression(node.value)}.{node.attr}'
+
+
+def convert_ast_collection_to_list(collection: Tuple):
+    content = []
+    for elt in collection.elts:
+        content.append(parse_expression(elt))
+    return content
 
 
 @singledispatch
@@ -97,9 +107,7 @@ def parse_collection(collection):
 @parse_collection.register(Tuple)
 @parse_collection.register(Set)
 def _(collection):
-    content = []
-    for argument in collection.elts:
-        content.append(parse_expression(argument))
+    content = convert_ast_collection_to_list(collection)
     if isinstance(collection, List):
         return f'[{",".join(content)}]'
     elif isinstance(collection, Tuple):
@@ -238,3 +246,36 @@ def parse_if_exp(node: IfExp):
 
 def parse_name_expr(node: NamedExpr):
     return f'({parse_expression(node.target)} := {parse_expression(node.value)})'
+
+
+def parse_subscript(node: Subscript):
+    value = parse_expression(node.value)
+    if isinstance(node.slice, Tuple):
+        subslice = ','.join(convert_ast_collection_to_list(node.slice))
+    else:
+        subslice = parse_expression(node.slice)
+    return f'{value}[{subslice}]'
+
+
+def parse_slice(node: Slice):
+    lower = parse_expression(node.lower)
+    upper = parse_expression(node.upper)
+    if node.step is not None:
+        step = parse_expression(node.step)
+        result = f'{lower}:{upper}:{step}'
+    else:
+        result = f'{lower}:{upper}'
+    return result
+
+
+def parse_assign(node: Assign):
+    if isinstance(node.targets[0], Tuple):
+        targets = ', '.join(convert_ast_collection_to_list(node.targets[0]))
+    else:
+        targets = parse_expression(node.targets)
+    value = parse_expression(node.value)
+    return f'{targets} = {value}'
+
+
+def parse_if(node: If):
+    return parse_expression(node.test)
