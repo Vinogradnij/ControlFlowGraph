@@ -1,5 +1,5 @@
 from ast import *
-# from astpretty import pprint
+from astpretty import pprint
 from typing import Any
 from functools import singledispatch
 
@@ -125,7 +125,7 @@ def _(collection):
 @parse_collection.register(Dict)
 def _(collection):
     content = []
-    for key, value in collection.keys, collection.values:
+    for key, value in zip(collection.keys, collection.values):
         content.append(f'"{parse_expression(key)}":{parse_expression(value)}')
     return f'{{{",".join(content)}}}'
 
