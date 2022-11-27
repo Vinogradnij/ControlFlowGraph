@@ -26,6 +26,10 @@ class MyVisitor(NodeVisitor):
         print(parse_expression(node))
         self.generic_visit(node)
 
+    def visit_For(self, node: For) -> Any:
+        print(parse_expression(node))
+        self.generic_visit(node)
+
 
 def parse_expression(node):
     if isinstance(node, Name):
@@ -71,6 +75,8 @@ def parse_expression(node):
         return parse_assign(node)
     elif isinstance(node, If):
         return parse_if(node)
+    elif isinstance(node, For):
+        return parse_for(node)
 
 
 def parse_name(node: Name):
@@ -279,3 +285,9 @@ def parse_assign(node: Assign):
 
 def parse_if(node: If):
     return parse_expression(node.test)
+
+
+def parse_for(node: For):
+    iterator = parse_expression(node.target)
+    collection = parse_expression(node.iter)
+    return f'for {iterator} in {collection}:'
